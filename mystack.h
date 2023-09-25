@@ -63,7 +63,7 @@ enum stack_codes {
     if (!exceptions.stack_exceptions) {                                        \
       return;                                                                  \
     }                                                                          \
-    fprintf(stderr, "error in Stack %p in function %s in file %s:%zu\n",       \
+    fprintf(stderr, "ERROR in Stack %p in function %s in file %s:%zu\n",       \
             stack, function, filename, line);                                  \
     if (exceptions.stack_exceptions & stack_codes::stack_does_not_exist) {     \
       fprintf(stderr, "Stack is nullptr\n");                                   \
@@ -73,12 +73,12 @@ enum stack_codes {
             stack->size, stack->capacity, stack->arr);                         \
     size_t log_size = stack->size > 10 ? 10 : stack->size;                     \
     for (size_t i = 0; i < log_size; ++i) {                                    \
-      printf("  [%d] = %d\n", i, *(stack->arr + i));                           \
+      fprintf(stderr, "  [%d] = %d\n", i, *(stack->arr + i));                  \
     }                                                                          \
     if (stack->size > log_size) {                                              \
-      printf(" ...\n");                                                         \
+      fprintf(stderr, "  ...\n");                                              \
     }                                                                          \
-    printf(" }\n}\n");                                                         \
+    fprintf(stderr, " }\n}\n");                                                \
     if (exceptions.stack_exceptions & stack_codes::stack_size_negative) {      \
       fprintf(stderr, "stack size is negative\n");                             \
     }                                                                          \
@@ -134,6 +134,7 @@ enum stack_codes {
 #define define_push(type)                           \
   int push(dynamic_array(type) * stack, type obj) { \
     STACK_VERIFY(stack);                            \
+    STACK_DUMP(stack);                              \
     if (stack->size >= stack->capacity) {           \
       if (stack->capacity == 0) {                   \
         resize(stack, 2);                           \
@@ -146,15 +147,18 @@ enum stack_codes {
     return 0;                                       \
   }
 
-#define define_pop(type)                 \
-  int pop(dynamic_array(type) * stack) { \
-    STACK_VERIFY(stack);                 \
-    STACK_DUMP(stack);                   \
-    if (stack->size > 0) {               \
-      --stack->size;                     \
-      return 0;                          \
-    }                                    \
-    return 1;                            \
+#define define_pop(type)                     \
+  int pop(dynamic_array(type) * stack) {     \
+    STACK_VERIFY(stack);                     \
+    STACK_DUMP(stack);                       \
+    if (stack->size * 3 < stack->capacity) { \
+      resize(stack, stack->capacity / 2);    \
+    }                                        \
+    if (stack->size > 0) {                   \
+      --stack->size;                         \
+      return 0;                              \
+    }                                        \
+    return 1;                                \
   }
 
 #define define_peek(type)                      \
