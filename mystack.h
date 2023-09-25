@@ -12,11 +12,11 @@ static struct exception_control {
 } exceptions;
 
 enum stack_codes {
-  stack_doesnt_exist = 1 << 63,
-  null_arr_of_nonempty_stack = 1 << 62,
-  stack_size_negative = 1 << 61,
-  stack_capacity_negative = 1 << 60,
-  stack_capacity_less_size = 1 << 59,
+  stack_does_not_exist = 1,
+  null_arr_of_nonempty_stack = 2,
+  stack_size_negative = 4,
+  stack_capacity_negative = 8,
+  stack_capacity_less_size = 16
 };
 
 #define define_dynamic_array(type) \
@@ -27,7 +27,7 @@ enum stack_codes {
   }
 
 #ifdef DEBUG
-#define STACK_DUMP(stack) StackDump(stack, __func__, __line__, __file__);
+#define STACK_DUMP(stack) StackDump(stack, __func__, __LINE__, __FILE__);
 #define STACK_VERIFY(stack) Stack_Verify(stack)
 #define THROW_STACK(code) exceptions.stack_exceptions |= code;
 
@@ -35,7 +35,7 @@ enum stack_codes {
   inline int Stack_Verify(dynamic_array(type) * stack) {    \
     int return_value = 0;                                   \
     if (!stack) {                                           \
-      THROW_STACK(stack_codes::stack_doesnt_exist);         \
+      THROW_STACK(stack_codes::stack_does_not_exist);       \
       return 1;                                             \
     }                                                       \
     if (!stack->arr && stack->size != 0) {                  \
@@ -57,23 +57,38 @@ enum stack_codes {
     return return_value;                                    \
   }
 
-#define define_dump(type)                                                  \
-  inline void StackDump(dynamic_array(type) * stack, const char *function, \
-                        const size_t line, const char *filename) {         \
-    if (!exceptions.stack_exceptions) {                                    \
-      return;                                                              \
-    }                                                                      \
-    fprintf(stderr, "error in Stack %p in function %s in file %s:%zu\n",   \
-            stack, function, filename, line);                              \
-    if (exceptions.stack_exceptions & stack_codes::stack_does_not_exist) { \
-      fprintf(stderr, "Stack is nullptr\n");                               \
-      return;                                                              \
-    }                                                                      \
-    fprintf(stderr, "{\n size = %zu;\n capacity = %zu;\n", stack->size,    \
-            stack->capacity);                                              \
-    if (stack->size < 0) {                                                 \
-      fprintf(stderr, "stack size is negative");                           \
-    }                                                                      \
+#define define_dump(type)                                                      \
+  inline void StackDump(dynamic_array(type) * stack, const char *function,     \
+                        const size_t line, const char *filename) {             \
+    if (!exceptions.stack_exceptions) {                                        \
+      return;                                                                  \
+    }                                                                          \
+    fprintf(stderr, "error in Stack %p in function %s in file %s:%zu\n",       \
+            stack, function, filename, line);                                  \
+    if (exceptions.stack_exceptions & stack_codes::stack_does_not_exist) {     \
+      fprintf(stderr, "Stack is nullptr\n");                                   \
+      return;                                                                  \
+    }                                                                          \
+    fprintf(stderr, "{\n size = %zu;\n capacity = %zu;\n data [%p] \n {\n",    \
+            stack->size, stack->capacity, stack->arr);                         \
+    size_t log_size = stack->size > 10 ? 10 : stack->size;                     \
+    for (size_t i = 0; i < log_size; ++i) {                                    \
+      printf("  [%d] = %d\n", i, *(stack->arr + i));                           \
+    }                                                                          \
+    if (stack->size > log_size) {                                              \
+      printf(" ...\n");                                                         \
+    }                                                                          \
+    printf(" }\n}\n");                                                         \
+    if (exceptions.stack_exceptions & stack_codes::stack_size_negative) {      \
+      fprintf(stderr, "stack size is negative\n");                             \
+    }                                                                          \
+    if (exceptions.stack_exceptions & stack_codes::stack_capacity_negative) {  \
+      fprintf(stderr, "stack capacity is negative\n");                         \
+    }                                                                          \
+    if (exceptions.stack_exceptions & stack_codes::stack_capacity_less_size) { \
+      fprintf(stderr, "stack size is less that capacity\n");                   \
+    }                                                                          \
+    abort();                                                                   \
   }
 #else
 #define STACK_DUMP(stack)
@@ -134,6 +149,7 @@ enum stack_codes {
 #define define_pop(type)                 \
   int pop(dynamic_array(type) * stack) { \
     STACK_VERIFY(stack);                 \
+    STACK_DUMP(stack);                   \
     if (stack->size > 0) {               \
       --stack->size;                     \
       return 0;                          \

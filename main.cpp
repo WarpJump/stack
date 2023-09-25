@@ -15,9 +15,11 @@ int main(){
     size_t begin  = clock();
     dynamic_array(char) arr;
     StackCtor(&arr);
-    for(size_t i = 0; i < 1'000'000'000; ++i){
+    for(size_t i = 0; i < 1'000'000; ++i){
         push(&arr, (i % 257 + '0') % 256);
     }
+    arr.size = arr.capacity + 1;
+    push(&arr, 1);
     for(size_t i = 0; i < 1'000'000'000; ++i){
         pop(&arr);
     }
