@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
+#define CANARY
+#define DEBUG
 #include "mystack.h"
 
-typedef char* char_ptr;
-define_stack(int);
+typedef char* CharPtr;
+//define_stack(int);
 
 define_stack(char);
 
@@ -23,5 +24,5 @@ int main(){
         pop(&arr);
     }
     printf("%zu %zu\n", arr.size, arr.capacity);
-    printf("Ok %d\n", (clock() - begin) * 1000 / CLOCKS_PER_SEC);
+    printf("Ok %zu\n", (clock() - begin) * 1000 / CLOCKS_PER_SEC);
 }
