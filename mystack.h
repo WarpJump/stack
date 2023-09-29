@@ -57,9 +57,8 @@ const long long kCanary = 0x77777777;
       THROW_STACK(StackCodes::StackCapacityLessSize);                          \
       return_value = 1;                                                        \
     }                                                                          \
-    IF_CANARY(if (stack->mem_begin &&                                         \
-                  *reinterpret_cast<unsigned long long *>(stack->mem_begin) != \
-                      kCanary) {                                               \
+    IF_CANARY(if (stack->mem_begin && *reinterpret_cast<unsigned long long *>( \
+                                          stack->mem_begin) != kCanary) {      \
       THROW_STACK(StackCodes::CanaryFail);                                     \
       return_value = 1;                                                        \
     };)                                                                        \
@@ -78,6 +77,9 @@ const long long kCanary = 0x77777777;
       fprintf(stderr, "Stack is nullptr\n");                                \
       return;                                                               \
     }                                                                       \
+    IF_CANARY(if (exceptions.stack_exceptions & StackCodes::CanaryFail) {   \
+      fprintf(stderr, "<<<Canary protection failed>>>\n");                                \
+    })                                                                      \
     fprintf(stderr, "{\n size = %zu;\n capacity = %zu;\n data [%p] \n {\n", \
             stack->size, stack->capacity, stack->arr_begin);                \
     size_t log_size = stack->size > 10 ? 10 : stack->size;                  \

@@ -19,6 +19,7 @@ int main(){
     for(size_t i = 0; i < 10'000'000; ++i){
         push(&arr, (i % 257 + '0') % 256);
     }
+    *arr.mem_begin = 1;
     push(&arr, 1);
     for(size_t i = 0; i < 10'000'000; ++i){
         pop(&arr);
