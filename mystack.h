@@ -8,18 +8,23 @@
 static struct ExceptionControl {
 #ifdef DEBUG
   size_t stack_exceptions = 0;
+#else
 #endif
 } exceptions;
 
 enum StackCodes {
   StackDoesNotExist = 1,
   NullArrOfNonemptyStack = 2,
-  StackSizeNegative = 4,
-  StackCapacityNegative = 8,
   StackCapacityLessSize = 16,
   CanaryFail = 32,
   HashFail = 64
 };
+
+#ifdef DEBUG
+#define IF_DEBUG(...) __VA_ARGS__
+#else
+#define IF_DEBUG(...)
+#endif
 
 #ifdef HASH
 const long long kPrimeNumber = 12553;
@@ -120,10 +125,10 @@ const long long kCanary = 0x77777777;
 #define define_dump(type)
 #endif
 
-#define define_canary(type)                                             \
-  int canary_verify(dynamic_array(type) * stack) {                      \
+#define define_canary(type)                                              \
+  int canary_verify(dynamic_array(type) * stack) {                       \
     return !stack->mem_begin || *reinterpret_cast<unsigned long long *>( \
-                                   stack->mem_begin) == kCanary;        \
+                                    stack->mem_begin) == kCanary;        \
   }
 
 #define define_hashing(type)                                             \
@@ -177,24 +182,29 @@ const long long kCanary = 0x77777777;
     return 0;                                                                  \
   }
 
-#define define_stack_constructor(type)                           \
-  void StackCtor(dynamic_array(type) * stack) {                  \
-    stack->arr_begin = nullptr;                                  \
-    stack->mem_begin = nullptr;                                  \
-    IF_CANARY(stack->last_canary = nullptr;)                     \
-    stack->size = 0;                                             \
-    stack->capacity = 0;          /*TODO true_size*/                               \
-    stack->true_size = 0;\
-    IF_HASH(stack->hash = hash_stack(stack));                    \
-  }                                                              \
-                                                                 \
-  void StackCtor(dynamic_array(type) * stack, size_t capacity) { \
-    resize(stack, capacity);                                     \
-    stack->size = 0;                                             \
+#define define_stack_constructor(type)                          \
+  int StackCtor(dynamic_array(type) * stack) {                  \
+    IF_DEBUG(if (!stack) { return 1; })                         \
+    stack->arr_begin = nullptr;                                 \
+    stack->mem_begin = nullptr;                                 \
+    IF_CANARY(stack->last_canary = nullptr;)                    \
+    stack->size = 0;                                            \
+    stack->capacity = 0;                                        \
+    stack->true_size = 0;                                       \
+    IF_HASH(stack->hash = hash_stack(stack));                   \
+    return 0;                                                   \
+  }                                                             \
+                                                                \
+  int StackCtor(dynamic_array(type) * stack, size_t capacity) { \
+    IF_DEBUG(if (!stack) { return 1; })                         \
+    resize(stack, capacity);                                    \
+    stack->size = 0;                                            \
+    return 0;                                                   \
   }
 
 #define define_stack_destructor(type)           \
   void StackDtor(dynamic_array(type) * stack) { \
+    assert(stack);                              \
     if (stack->mem_begin != nullptr) {          \
       free(stack->mem_begin);                   \
     }                                           \
@@ -219,19 +229,20 @@ const long long kCanary = 0x77777777;
     return 0;                                       \
   }
 
-#define define_pop(type)                     \
-  int pop(dynamic_array(type) * stack) {     \
-    STACK_VERIFY(stack);                     \
-    STACK_DUMP(stack);                       \
-    if (stack->size * 4 < stack->capacity) { \
-      resize(stack, stack->capacity >> 1);   \
-    }                                        \
-    if (stack->size > 0) {                   \
-      --stack->size;                         \
-      return 0;                              \
-    }                                        \
-    IF_HASH(stack->hash = hash_stack(stack));       \
-    return 1;                                \
+#define define_pop(type)                        \
+  int pop(dynamic_array(type) * stack) {        \
+    STACK_VERIFY(stack);                        \
+    STACK_DUMP(stack);                          \
+    if (stack->size * 4 < stack->capacity) {    \
+      resize(stack, stack->capacity >> 1);      \
+    }                                           \
+    if (stack->size > 0) {                      \
+      --stack->size;                            \
+      IF_HASH(stack->hash = hash_stack(stack)); \
+      return 0;                                 \
+    }                                           \
+    IF_HASH(stack->hash = hash_stack(stack));   \
+    return 1;                                   \
   }
 
 #define define_peek(type)                      \

@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <cassert>
 #define DEBUG
 #define HASH
-#define aboba printf("aboba %d %s\n", __LINE__, __func__);
+#define CANARY
 
 
 #include "mystack.h"
@@ -21,14 +22,11 @@ define_stack(char);
 int main(){
     size_t begin  = clock();
     dynamic_array(char) arr;
-    aboba
     StackCtor(&arr);
     for(size_t i = 0; i < kNumOfTests; ++i){
         push(&arr, (i % 257 + '0') % kCharLength);
     }
-    aboba
-
-    *arr.mem_begin = 1;
+    //*arr.mem_begin = 1;
     push(&arr, 1);
     for(size_t i = 0; i < kNumOfTests; ++i){
         pop(&arr);
