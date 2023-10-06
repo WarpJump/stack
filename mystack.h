@@ -140,7 +140,7 @@ const long long kCanary = 0x77777777;
       new_hash %= kModule;                                               \
     }                                                                    \
     for (size_t i = 0; i < stack->size; ++i) {                           \
-      new_hash += ((char *)stack->mem_begin)[i];                         \
+      new_hash += ((char *)stack->arr_begin)[i];                         \
     }                                                                    \
     stack->hash = new_hash;                                              \
     return new_hash;                                                     \
